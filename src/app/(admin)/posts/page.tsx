@@ -31,7 +31,7 @@ export default async function PostsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Posts</h1>
         {/* Make sure this link also points to the correct /admin path */}
         <Button asChild>
-          <Link href="/admin/posts/new">Create Post</Link>
+          <Link href="/posts/new">Create Post</Link>
         </Button>
       </div>
 
@@ -60,7 +60,7 @@ export default async function PostsPage() {
                 <TableCell>
                   {/* The edit link must also have the /admin prefix */}
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/posts/edit/${post.id}`}>Edit</Link>
+                    <Link href={`/posts/edit/${post.id}`}>Edit</Link>
                   </Button>
                 </TableCell>
               </TableRow>
