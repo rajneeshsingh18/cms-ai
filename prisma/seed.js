@@ -4,8 +4,8 @@ const prisma = new PrismaClient()
 async function main() {
   await prisma.post.create({
     data: {
-      title: "Another Test Post Test Post",
-      slug: "test-post-2",
+      title: "Selling smartphone ",
+      slug: "test-post-r",
       content: "This is a another test post",
       published: true,
       tags: ["test"]
