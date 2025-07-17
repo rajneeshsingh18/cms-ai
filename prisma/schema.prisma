@@ -13,15 +13,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 model Post {
   id        String   @id @default(uuid())
   title     String
   slug      String   @unique
   content   String
   imageUrl  String?
-  tags      String[]
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  // Optional: Add relations later (e.g., author, categories)
+  
+  // Replace the old 'tags' array with this relation
+  tags      Tag[]    @relation
+}
+
+// Add this new model for Tags
+model Tag {
+  id    String @id @default(uuid())
+  name  String @unique
+  
+  // This defines the other side of the many-to-many relation
+  posts Post[] @relation
 }

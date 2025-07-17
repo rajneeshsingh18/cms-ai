@@ -21,7 +21,6 @@ export default function NewPostPage() {
   []);
 
   useEffect(() => {
-    // This effect is mainly for showing errors now
     if (state?.message) {
       toast.error('Error', { description: state.message });
     }
@@ -69,6 +68,16 @@ export default function NewPostPage() {
               </div>
             )}
             <input type="hidden" name="imageUrl" value={imageUrl} />
+          </div>
+
+          {/* THIS IS THE MISSING TAGS FIELD */}
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags (comma-separated)</Label>
+            <Input 
+                id="tags" 
+                name="tags" 
+                placeholder="e.g., tech, review, apple" 
+            />
           </div>
 
           <div className="space-y-2">

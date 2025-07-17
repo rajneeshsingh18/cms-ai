@@ -43,10 +43,23 @@ export async function createPost(prevState: any, formData: FormData) {
   const content = formData.get('content') as string;
   const published = formData.get('published') === 'on';
   const imageUrl = formData.get('imageUrl') as string;
+  const tagsString = formData.get('tags') as string; // Get the tags string
 
   if (!title || !content) {
     return { message: 'Title and content are required.' };
   }
+
+  // Process the tags string into the format Prisma needs
+  const tagObjects = tagsString
+    ? tagsString
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+        .map(tag => ({
+          where: { name: tag },
+          create: { name: tag },
+        }))
+    : [];
 
   try {
     await prisma.post.create({
@@ -56,7 +69,9 @@ export async function createPost(prevState: any, formData: FormData) {
         published,
         slug: createUniqueSlug(title),
         imageUrl: imageUrl || null,
-        tags: [],
+        tags: {
+          connectOrCreate: tagObjects, // Use Prisma's connectOrCreate
+        },
       },
     });
   } catch (e) {
@@ -64,8 +79,7 @@ export async function createPost(prevState: any, formData: FormData) {
     return { message: 'Database Error: Failed to create post.' };
   }
 
-  // On success, clear the cache and redirect
-  revalidatePath('/posts'); 
+  revalidatePath('/posts');
   redirect('/posts');
 }
 
