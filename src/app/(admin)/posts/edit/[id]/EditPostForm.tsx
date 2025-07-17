@@ -84,19 +84,33 @@ export default function EditPostForm({ post }: { post: PostWithTags }) {
     }
   };
 
+  // Function to handle the preview
+  const handlePreview = () => {
+    const previewData = {
+      title,
+      content,
+      imageUrl,
+      tags: tags.split(',').map(name => ({ name })),
+      createdAt: post.createdAt,
+    };
+    localStorage.setItem('post-preview', JSON.stringify(previewData));
+    window.open('/preview', '_blank');
+  };
+
   return (
     <form action={updateFormAction} className="space-y-6">
       <input type="hidden" name="postId" value={post.id} />
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Edit Post</h1>
         <div className="flex items-center gap-4">
-          {/* Save Status Indicator */}
           <p className="text-sm text-muted-foreground">{saveStatus}</p>
+          <Button type="button" variant="outline" onClick={handlePreview}>
+            Preview
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild><Button type="button" variant="destructive">Delete</Button></AlertDialogTrigger>
             <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this post.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><div><AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction></div></AlertDialogFooter></AlertDialogContent>
           </AlertDialog>
-          {/* Button with intent for server action */}
           <Button type="submit" name="intent" value="save-and-close">
             Save & Close
           </Button>
