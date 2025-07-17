@@ -1,81 +1,84 @@
-'use client'; // This page needs to be a Client Component to handle form state
+'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { createPost, uploadImageAction } from './actions';
+import { useActionState, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+
+const initialState = { message: '' };
 
 export default function NewPostPage() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
+  const [state, formAction] = useActionState(createPost, initialState);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const TiptapEditor = useMemo(() => 
+    dynamic(() => import('@/components/TiptapEditor'), { ssr: false, loading: () => <p>Loading editor...</p> }), 
+  []);
 
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title, content }),
-      });
+  useEffect(() => {
+    // This effect is mainly for showing errors now
+    if (state?.message) {
+      toast.error('Error', { description: state.message });
+    }
+  }, [state]);
 
-      if (!response.ok) {
-        throw new Error('Failed to create post');
-      }
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-      // On success, go back to the main posts list
-      router.push('/posts');
-      router.refresh(); // Important: This tells Next.js to refetch the posts list
-    } catch (error) {
-      console.error(error);
-      // You can add an error notification here
-    } finally {
-      setIsSubmitting(false);
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    toast.info('Uploading image...');
+    const result = await uploadImageAction(formData);
+
+    if (result.error) {
+      toast.error('Image Upload Failed', { description: result.error });
+    } else if (result.imageUrl) {
+      setImageUrl(result.imageUrl);
+      toast.success('Image Uploaded Successfully!');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="flex justify-between items-center mb-6">
+    <form action={formAction} className="space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Create New Post</h1>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Post'}
-        </Button>
+        <Button type="submit">Save Post</Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Post Details</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Post Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Your post title"
-              required
-            />
+            <Input id="title" name="title" placeholder="Your post title" required />
           </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your post content here..."
-              rows={15}
-              required
-            />
+            <Label htmlFor="image">Featured Image</Label>
+            <Input id="image" type="file" onChange={handleImageUpload} accept="image/*" />
+            {imageUrl && (
+              <div className="mt-4 relative w-full h-64">
+                <Image src={imageUrl} alt="Image preview" fill className="object-cover rounded-md" />
+              </div>
+            )}
+            <input type="hidden" name="imageUrl" value={imageUrl} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Content</Label>
+            <TiptapEditor name="content" defaultValue="" />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="published" name="published" defaultChecked={false} className="h-4 w-4"/>
+            <Label htmlFor="published">Publish immediately</Label>
           </div>
         </CardContent>
       </Card>
