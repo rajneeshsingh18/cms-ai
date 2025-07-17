@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import TagActions from './TagActions';
 import {
   Table,
   TableBody,
@@ -8,7 +9,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { prisma } from '@/lib/prisma';
-import TagActions from './TagActions'; // Import the new component
 
 /**
  * Fetches all tags from the database and includes a count of
@@ -30,7 +30,7 @@ async function getTagsWithPostCount() {
 
 export default async function TagsPage() {
   const tags = await getTagsWithPostCount();
-  const numColumns = 3; // For the empty state row
+  const numColumns = 3;
 
   return (
     <div>
@@ -54,8 +54,8 @@ export default async function TagsPage() {
                   <TableCell className="font-medium">{tag.name}</TableCell>
                   <TableCell>{tag._count.posts}</TableCell>
                   <TableCell className="text-right">
-                    {/* Use the TagActions component for the delete button */}
-                    <TagActions tagId={tag.id} />
+                    {/* CORRECTED: Pass both tagId and tagName */}
+                    <TagActions tagId={tag.id} tagName={tag.name} />
                   </TableCell>
                 </TableRow>
               ))
