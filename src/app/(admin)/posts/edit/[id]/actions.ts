@@ -12,7 +12,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Re-using the image upload action from the "new" page
+// Re-using the image upload action
 export async function uploadImageAction(formData: FormData) {
   const file = formData.get('image') as File;
   if (!file || file.size === 0) {
@@ -37,9 +37,9 @@ export async function uploadImageAction(formData: FormData) {
   }
 }
 
-
 // Server Action to UPDATE a post
 export async function updatePostAction(prevState: any, formData: FormData) {
+  const intent = formData.get('intent') as string;
   const postId = formData.get('postId') as string;
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
@@ -63,7 +63,7 @@ export async function updatePostAction(prevState: any, formData: FormData) {
     : [];
 
   try {
-    // We use `update` here instead of `create`
+    // Use `update` to modify the existing post
     await prisma.post.update({
       where: { id: postId },
       data: {
@@ -72,22 +72,28 @@ export async function updatePostAction(prevState: any, formData: FormData) {
         published,
         imageUrl: imageUrl || null,
         tags: {
-          // `set` will disconnect all existing tags and connect the new set
-          set: [], 
-          connectOrCreate: tagObjects,
+          set: [], // Disconnect all existing tags first
+          connectOrCreate: tagObjects, // Connect the new set of tags
         },
       },
     });
-
-    // Revalidate paths to show updated data immediately
-    revalidatePath('/posts');
-    revalidatePath(`/posts/edit/${postId}`);
-    return { message: 'Post updated successfully.' };
-
   } catch (error) {
     console.error('Error updating post:', error);
     return { message: 'Database Error: Failed to update post.' };
   }
+
+  // Always revalidate after a successful update
+  revalidatePath('/posts');
+  revalidatePath(`/posts/edit/${postId}`);
+
+  // Now, check the intent to decide whether to redirect
+  if (intent === 'save-and-close') {
+    redirect('/posts'); // This will now correctly stop execution and redirect
+  }
+
+  // If the intent was not 'save-and-close', it was an autosave.
+  // Return a success message for the autosave status.
+  return { message: 'Post updated successfully.' };
 }
 
 // Server Action to DELETE a post
@@ -105,7 +111,7 @@ export async function deletePostAction(postId: string) {
     throw new Error('Failed to delete post.');
   }
 
-  // Revalidate the posts list and redirect
+  // On successful deletion, revalidate and redirect
   revalidatePath('/posts');
   redirect('/posts');
 }

@@ -9,22 +9,29 @@ import { useActionState, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const initialState = { message: '' };
 
 export default function NewPostPage() {
   const [state, formAction] = useActionState(createPost, initialState);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const router = useRouter();
 
-  const TiptapEditor = useMemo(() => 
-    dynamic(() => import('@/components/TiptapEditor'), { ssr: false, loading: () => <p>Loading editor...</p> }), 
+  const TiptapEditor = useMemo(() =>
+    dynamic(() => import('@/components/TiptapEditor'), { ssr: false, loading: () => <p>Loading editor...</p> }),
   []);
 
   useEffect(() => {
-    if (state?.message) {
+    if (state?.message && state.message.includes('successfully')) {
+      toast.success('Post Created', {
+        description: state.message,
+        onAutoClose: () => router.push('/posts'), // Redirect after toast disappears
+      });
+    } else if (state?.message) {
       toast.error('Error', { description: state.message });
     }
-  }, [state]);
+  }, [state, router]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -32,7 +39,6 @@ export default function NewPostPage() {
 
     const formData = new FormData();
     formData.append('image', file);
-    
     toast.info('Uploading image...');
     const result = await uploadImageAction(formData);
 
@@ -58,7 +64,7 @@ export default function NewPostPage() {
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" placeholder="Your post title" required />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="image">Featured Image</Label>
             <Input id="image" type="file" onChange={handleImageUpload} accept="image/*" />
@@ -70,19 +76,19 @@ export default function NewPostPage() {
             <input type="hidden" name="imageUrl" value={imageUrl} />
           </div>
 
-          {/* THIS IS THE MISSING TAGS FIELD */}
           <div className="space-y-2">
             <Label htmlFor="tags">Tags (comma-separated)</Label>
-            <Input 
-                id="tags" 
-                name="tags" 
-                placeholder="e.g., tech, review, apple" 
+            <Input
+                id="tags"
+                name="tags"
+                placeholder="e.g., tech, review, apple"
             />
           </div>
 
           <div className="space-y-2">
             <Label>Content</Label>
-            <TiptapEditor name="content" defaultValue="" />
+            {/* Provide a dummy onChange function to satisfy TypeScript */}
+            <TiptapEditor name="content" defaultValue="" onChange={() => {}} />
           </div>
 
           <div className="flex items-center space-x-2">
