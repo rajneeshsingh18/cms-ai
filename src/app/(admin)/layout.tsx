@@ -1,9 +1,8 @@
-import { auth} from '@clerk/nextjs/server'; 
-import { UserButton } from '@clerk/nextjs'; 
-
+import { auth } from '@clerk/nextjs/server'; 
+import { UserButton } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Home, Settings } from 'lucide-react';
+import { FileText, Home, Settings, Tags } from 'lucide-react';
 
 export default async function AdminLayout({
   children,
@@ -24,26 +23,32 @@ export default async function AdminLayout({
         </div>
         
         <nav className="flex-1 p-2 space-y-1">
-            {/* CORRECTED: Removed /admin prefix to match your working URLs */}
             <Link 
               href="/dashboard" 
               className="flex items-center gap-2 p-2 rounded hover:bg-accent"
             >
-              <Home className="w-4 h-4" />
+              <Home className="h-4 w-4" />
               Dashboard
             </Link>
             <Link 
               href="/posts" 
               className="flex items-center gap-2 p-2 rounded hover:bg-accent"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="h-4 w-4" />
               Posts
+            </Link>
+            <Link 
+              href="/tags" 
+              className="flex items-center gap-2 p-2 rounded hover:bg-accent"
+            >
+              <Tags className="h-4 w-4" />
+              Tags
             </Link>
             <Link 
               href="/settings" 
               className="flex items-center gap-2 p-2 rounded hover:bg-accent"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="h-4 w-4" />
               Settings
             </Link>
         </nav>
