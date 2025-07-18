@@ -1,19 +1,40 @@
 import { prisma } from '@/lib/prisma';
 import PostCard from '@/components/PostCard';
+import PaginationControls from '@/components/PaginationControls'; // Import the pagination component
+
+const POSTS_PER_PAGE = 6; // Define how many posts to show per page
 
 /**
- * Fetches all published posts from the database, including their tags.
+ * Fetches a paginated list of PUBLISHED posts and the total post count.
  */
-async function getPublishedPosts() {
-  return await prisma.post.findMany({
-    where: { published: true },
-    include: { tags: true },
-    orderBy: { createdAt: 'desc' },
-  });
+async function getPaginatedPublishedPosts(page: number = 1) {
+  const skip = (page - 1) * POSTS_PER_PAGE;
+  const take = POSTS_PER_PAGE;
+
+  const [posts, totalPosts] = await Promise.all([
+    prisma.post.findMany({
+      where: { published: true },
+      include: { tags: true },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count({ where: { published: true } }),
+  ]);
+
+  return { posts, totalPosts };
 }
 
-export default async function HomePage() {
-  const posts = await getPublishedPosts();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const page = Number(searchParams['page']) || 1;
+  const { posts, totalPosts } = await getPaginatedPublishedPosts(page);
+
+  const hasNextPage = page * POSTS_PER_PAGE < totalPosts;
+  const hasPrevPage = page > 1;
 
   return (
     <main className="container mx-auto px-4 py-12 md:py-16">
@@ -32,7 +53,6 @@ export default async function HomePage() {
             <PostCard 
               key={post.id} 
               post={post} 
-              
             />
           ))}
         </section>
@@ -46,6 +66,16 @@ export default async function HomePage() {
           </p>
         </section>
       )}
+
+      {/* Add the pagination controls at the bottom */}
+      <div className="mt-16">
+        <PaginationControls
+          currentPage={page}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+          basePath="/"
+        />
+      </div>
     </main>
   );
 }
