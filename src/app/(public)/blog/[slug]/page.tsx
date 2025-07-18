@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import type { Metadata } from 'next'; // Import the Metadata type
 
 interface PostPageProps {
   params: {
@@ -9,12 +10,10 @@ interface PostPageProps {
   };
 }
 
-/**
- * Fetches a single published post by its slug, including its tags.
- */
+// Function to fetch a single published post by its slug (reused for metadata and page)
 async function getPost(slug: string) {
   const post = await prisma.post.findUnique({
-    where: { slug, published: true }, // Only find published posts
+    where: { slug, published: true },
     include: {
       tags: true,
     },
@@ -22,28 +21,43 @@ async function getPost(slug: string) {
   return post;
 }
 
-/**
- * Generates a list of all published post slugs at build time for static generation.
- */
-export async function generateStaticParams() {
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    select: { slug: true },
-  });
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+// NEW: Function to generate dynamic metadata
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+  const post = await getPost(params.slug);
+
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+      description: 'This post could not be found.',
+    };
+  }
+
+  // Create a plain text excerpt for the meta description
+  const excerpt = post.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
+
+  return {
+    title: `${post.title} | My AI Blog`,
+    description: excerpt,
+    openGraph: {
+      title: post.title,
+      description: excerpt,
+      images: post.imageUrl ? [{ url: post.imageUrl }] : [],
+    },
+  };
 }
+
+// ... (generateStaticParams function remains the same) ...
 
 export default async function PostPage({ params }: PostPageProps) {
   const post = await getPost(params.slug);
 
   if (!post) {
-    notFound(); // If no post with this slug is found, show a 404 page
+    notFound();
   }
 
   return (
     <article className="max-w-3xl mx-auto py-8 px-4">
+      {/* ... (rest of the page component remains the same) ... */}
       {post.imageUrl && (
         <div className="relative h-96 w-full mb-8">
           <Image
@@ -63,8 +77,6 @@ export default async function PostPage({ params }: PostPageProps) {
             ))}
         </div>
       </div>
-
-      {/* This container will correctly style your HTML content */}
       <div
         className="prose dark:prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content }}
