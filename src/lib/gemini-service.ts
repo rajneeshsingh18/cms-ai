@@ -1,4 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
+import { marked } from 'marked'; // Import the new library
+
 
 class GeminiService {
   private genAI: GoogleGenAI;

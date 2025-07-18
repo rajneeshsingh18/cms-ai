@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 
-// Define a type for the post data this component expects
 interface PostData {
   title: string;
   content: string;
@@ -15,12 +14,7 @@ export default function PostDisplay({ post }: { post: PostData }) {
     <article className="max-w-3xl mx-auto py-8 px-4">
       {post.imageUrl && (
         <div className="relative h-96 w-full mb-8">
-          <Image
-            src={post.imageUrl}
-            alt={post.title}
-            fill
-            className="object-cover rounded-lg"
-          />
+          <Image src={post.imageUrl} alt={post.title} fill className="object-cover rounded-lg" />
         </div>
       )}
       <h1 className="text-4xl font-extrabold tracking-tight mb-4">{post.title}</h1>
@@ -33,6 +27,8 @@ export default function PostDisplay({ post }: { post: PostData }) {
         </div>
       </div>
 
+      {/* THIS IS THE CRITICAL PART */}
+      {/* Ensure this div has the "prose" and "dark:prose-invert" classes */}
       <div
         className="prose dark:prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content }}
