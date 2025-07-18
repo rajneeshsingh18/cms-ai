@@ -4,32 +4,28 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { v2 as cloudinary } from 'cloudinary';
+import { geminiService } from '@/lib/gemini-service'; // Import your Gemini Service
 
-// Configure Cloudinary (it's safe to have this in multiple action files)
+// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Re-using the image upload action
+// Action to upload an image
 export async function uploadImageAction(formData: FormData) {
   const file = formData.get('image') as File;
   if (!file || file.size === 0) {
     return { error: 'No image provided.' };
   }
-
   try {
     const fileBuffer = await file.arrayBuffer();
     const mime = file.type;
     const encoding = 'base64';
     const base64Data = Buffer.from(fileBuffer).toString('base64');
     const fileUri = `data:${mime};${encoding},${base64Data}`;
-
-    const result = await cloudinary.uploader.upload(fileUri, {
-      folder: 'cms-ai-project',
-    });
-    
+    const result = await cloudinary.uploader.upload(fileUri, { folder: 'cms-ai-project' });
     return { imageUrl: result.secure_url };
   } catch (error) {
     console.error('Upload error:', error);
@@ -37,7 +33,7 @@ export async function uploadImageAction(formData: FormData) {
   }
 }
 
-// Server Action to UPDATE a post
+// Action to UPDATE a post
 export async function updatePostAction(prevState: any, formData: FormData) {
   const intent = formData.get('intent') as string;
   const postId = formData.get('postId') as string;
@@ -46,24 +42,20 @@ export async function updatePostAction(prevState: any, formData: FormData) {
   const published = formData.get('published') === 'on';
   const imageUrl = formData.get('imageUrl') as string;
   const tagsString = formData.get('tags') as string;
+  const metaDescription = formData.get('metaDescription') as string; // Get the new field
 
   if (!postId || !title || !content) {
     return { message: 'Post ID, title, and content are required.' };
   }
 
   const tagObjects = tagsString
-    ? tagsString
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0)
-        .map(tag => ({
-          where: { name: tag },
-          create: { name: tag },
-        }))
+    ? tagsString.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => ({
+        where: { name: tag },
+        create: { name: tag },
+      }))
     : [];
 
   try {
-    // Use `update` to modify the existing post
     await prisma.post.update({
       where: { id: postId },
       data: {
@@ -71,9 +63,10 @@ export async function updatePostAction(prevState: any, formData: FormData) {
         content,
         published,
         imageUrl: imageUrl || null,
+        metaDescription: metaDescription || null, // Save the new field
         tags: {
-          set: [], // Disconnect all existing tags first
-          connectOrCreate: tagObjects, // Connect the new set of tags
+          set: [],
+          connectOrCreate: tagObjects,
         },
       },
     });
@@ -82,26 +75,21 @@ export async function updatePostAction(prevState: any, formData: FormData) {
     return { message: 'Database Error: Failed to update post.' };
   }
 
-  // Always revalidate after a successful update
   revalidatePath('/posts');
   revalidatePath(`/posts/edit/${postId}`);
 
-  // Now, check the intent to decide whether to redirect
   if (intent === 'save-and-close') {
-    redirect('/posts'); // This will now correctly stop execution and redirect
+    redirect('/posts');
   }
 
-  // If the intent was not 'save-and-close', it was an autosave.
-  // Return a success message for the autosave status.
   return { message: 'Post updated successfully.' };
 }
 
-// Server Action to DELETE a post
+// Action to DELETE a post
 export async function deletePostAction(postId: string) {
   if (!postId) {
     throw new Error('Post ID is required.');
   }
-  
   try {
     await prisma.post.delete({
       where: { id: postId },
@@ -110,8 +98,43 @@ export async function deletePostAction(postId: string) {
     console.error('Error deleting post:', error);
     throw new Error('Failed to delete post.');
   }
-
-  // On successful deletion, revalidate and redirect
   revalidatePath('/posts');
   redirect('/posts');
+}
+
+// NEW: Server Action to generate an SEO meta description
+// CORRECTED: Server Action to generate an SEO meta description
+export async function generateMetaDescriptionAction(postContent: string) {
+  if (!postContent) {
+    return { error: 'Post content is required to generate a description.' };
+  }
+  const prompt = `Based on the following blog post content, write a compelling and concise SEO meta description. The description should be a single paragraph, under 155 characters, and encourage users to click. Do not include any quotation marks in the output. Post Content: "${postContent.replace(/<[^>]*>?/gm, '').substring(0, 1000)}..."`;
+  
+  try {
+    // THE FIX: Use the 'text' property from the response, not 'html'.
+    const { text } = await geminiService.generateArticle(prompt);
+    return { description: text.trim() };
+  } catch (error) {
+    console.error('AI Meta Description Error:', error);
+    return { error: 'Failed to generate meta description.' };
+  }
+}
+
+// CORRECTED: Server Action to suggest tags
+export async function suggestTagsAction(postContent: string) {
+  if (!postContent) {
+    return { error: 'Post content is required to suggest tags.' };
+  }
+  const prompt = `Based on the following blog post content, suggest 5-7 relevant tags. The output should be a single string of comma-separated values. For example: "tech, AI, web development". Do not include any introductory text or quotation marks in the output. Post Content: "${postContent.replace(/<[^>]*>?/gm, '').substring(0, 1000)}..."`;
+  
+  try {
+    // THE FIX: Use the 'text' property from the response, not 'html'.
+    const { text } = await geminiService.generateArticle(prompt);
+    // Also, remove any potential paragraph tags just in case.
+    const cleanTags = text.replace(/<\/?p>/g, '').trim();
+    return { tags: cleanTags };
+  } catch (error) {
+    console.error('AI Tag Suggestion Error:', error);
+    return { error: 'Failed to suggest tags.' };
+  }
 }

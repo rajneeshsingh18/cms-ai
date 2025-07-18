@@ -15,17 +15,16 @@ generator client {
 
 
 model Post {
-  id        String   @id @default(uuid())
-  title     String
-  slug      String   @unique
-  content   String
-  imageUrl  String?
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Replace the old 'tags' array with this relation
-  tags      Tag[]    @relation
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  content         String
+  imageUrl        String?
+  published       Boolean  @default(false)
+  metaDescription String?  // NEW: Add this field for SEO
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tags            Tag[]    @relation
 }
 
 // Add this new model for Tags
