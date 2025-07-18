@@ -138,3 +138,31 @@ export async function suggestTagsAction(postContent: string) {
     return { error: 'Failed to suggest tags.' };
   }
 }
+
+
+// NEW: Server Action to generate affiliate content
+export async function generateAffiliateContentAction(productName: string, affiliateLink: string) {
+  const prompt = `
+    Generate a short, engaging product review section for a blog post.
+    The product is "${productName}".
+    The output must be a single block of HTML.
+    
+    It should include:
+    1. An <h2> heading with a catchy title for the review section.
+    2. A short introductory paragraph.
+    3. An <h3> for "Pros" followed by a short unordered list (<ul>) of 4-6 pros.
+    4. An <h3> for "Cons" followed by a short unordered list (<ul>) of 2-3 cons.
+    5. A concluding paragraph.
+    6. A call-to-action button that links to the following affiliate URL: ${affiliateLink}. The button must be a styled <a href="${affiliateLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block; padding:10px 20px; background-color:#007bff; color:white; text-decoration:none; border-radius:5px;">Buy Now on Amazon</a>.
+
+    Do not include any text or markdown outside of the main HTML block.
+  `;
+
+  try {
+    const { html } = await geminiService.generateArticle(prompt);
+    return { htmlContent: html };
+  } catch (error) {
+    console.error('AI Affiliate Content Error:', error);
+    return { error: 'Failed to generate affiliate content.' };
+  }
+}
