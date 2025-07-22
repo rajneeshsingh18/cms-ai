@@ -71,18 +71,31 @@ export default function NewPostPage() {
 
     try {
       const prompt = `
-        Write a 100-word SEO-optimized article in English about: ${postTitle}
+        Write a 1000-word SEO-optimized article in English about: ${postTitle}
         Focus keyword: ${aiPrompt}
         Product specifications: ${productSpecs}
 
-        Requirements:
-        - Use H1, H2, H3, H4 headings (15+ total)
-        - Include tables for outline and article
-        - Add pros/cons table
-        - Include 5 unique FAQs
-        - Write in conversational tone with humor
-        - Add disclaimer about pricing variations
-        - Include Amazon disclosure
+        Instructions:
+      - First, create two tables:
+        1. The first table should be the **Outline of the Article**
+        2. The second table should contain the **Full Article Content**, using **Markdown language to bold all headings**
+      - Begin with an outline of the article with at least 15 headings and subheadings (use H1, H2, H3, H4 formatting)
+      - Write a 1000-word, 100% unique, SEO-optimized, human-written article in fluent English
+      - Write in your own words—do not copy from other sources
+      - Maintain high levels of perplexity and burstiness while keeping clarity and context
+      - Use fully detailed paragraphs in a conversational, humorous tone as written by an intermediate-level human writer
+      - Use personal pronouns, analogies, rhetorical questions, and keep things simple, engaging, and brief
+      - After the article, include:
+       - A **Pros and Cons Table**
+      - A **Conclusion Paragraph**
+      - Five **Unique FAQs**
+
+
+        Remember:
+      - Bold the title and all section headings using Markdown
+      - Use proper H1-H4 HTML-like formatting for headings
+      - Keep content logically structured and fun to read
+
       `;
 
       const { html } = await geminiService.generateArticle(prompt);
