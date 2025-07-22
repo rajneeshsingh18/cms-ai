@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import PostCard from '@/components/PostCard';
 import PaginationControls from '@/components/PaginationControls';
+import TagsCloud from '@/components/TagsCloud';
 
 const POSTS_PER_PAGE = 6;
 
@@ -68,6 +69,9 @@ export default async function HomePage({
             </p>
           </section>
         )}
+
+        {/* --- 2. Add the TagsCloud component here --- */}
+        <TagsCloud />
 
         {/* Pagination controls with retro styling */}
         <div className="mt-16">
