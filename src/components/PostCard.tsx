@@ -105,7 +105,7 @@ export default function PostCard({ post }: { post: PostWithTags }) {
                     {post.tags.map(tag => (
                       <Badge 
                         key={tag.id} 
-                        className="bg-amber-200 text-foreground border border-foreground rounded-none font-mono text-xs px-2 py-0.5"
+                        className="bg-amber-100 text-foreground border border-foreground rounded-none font-mono text-xs px-2 py-0.5"
                       >
                         {tag.name}
                       </Badge>

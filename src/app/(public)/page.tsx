@@ -38,7 +38,7 @@ export default async function HomePage({
   const hasPrevPage = page > 1;
 
   return (
-    <main className="bg-amber-100 min-h-screen">
+    <main className="bg-amber-50 min-h-screen">
       <div className="container mx-auto px-4 py-12 md:py-16">
         <header className="text-center mb-16 md:mb-20">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-serif tracking-tighter text-foreground"

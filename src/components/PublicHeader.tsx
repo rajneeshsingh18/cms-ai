@@ -18,8 +18,8 @@ export default function Header() {
           <Link href="/" className="text-sm font-mono text-foreground/80 hover:text-foreground hover:underline transition-colors hidden md:inline-block">
             Home
           </Link>
-          <Link href="/tags" className="text-sm font-mono text-foreground/80 hover:text-foreground hover:underline transition-colors hidden md:inline-block">
-            Tags
+          <Link href="/topic" className="text-sm font-mono text-foreground/80 hover:text-foreground hover:underline transition-colors hidden md:inline-block">
+            Topic
           </Link>
           <Link href="/about" className="text-sm font-mono text-foreground/80 hover:text-foreground hover:underline transition-colors hidden md:inline-block">
             About

@@ -3,61 +3,92 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function deleteTagAction(tagId: string) {
-  if (!tagId) {
-    return { error: 'Tag ID is required.' };
+/**
+ * Creates a new tag in the database.
+ * @param formData Contains the 'name' of the new tag.
+ * @returns An object with a 'success' or 'error' message.
+ */
+export async function createTagAction(formData: FormData) {
+  const name = formData.get('name') as string;
+
+  if (!name) {
+    return { error: 'Tag name is required.' };
   }
 
   try {
-    // Find the tag to get its name for the success message
-    const tag = await prisma.tag.findUnique({
-      where: { id: tagId },
-    });
-
-    if (!tag) {
-      return { error: 'Tag not found.' };
+    const existingTag = await prisma.tag.findUnique({ where: { name } });
+    if (existingTag) {
+      return { error: `A tag named "${name}" already exists.` };
     }
 
-    // Delete the tag
-    await prisma.tag.delete({
-      where: { id: tagId },
+    await prisma.tag.create({
+      data: { name },
     });
-
-    // Revalidate the tags page to show the updated list
-    revalidatePath('/tags');
-    return { success: `Tag "${tag.name}" has been deleted.` };
-
+    
+    revalidatePath('/dashboard/tags');
+    return { success: `Tag "${name}" created successfully.` };
   } catch (error) {
-    console.error('Error deleting tag:', error);
-    return { error: 'Failed to delete tag.' };
+    return { error: 'Failed to create tag.' };
   }
 }
 
-// NEW: Server Action to update a tag's name
-export async function updateTagAction(tagId: string, newName: string) {
-  if (!tagId || !newName) {
-    return { error: 'Tag ID and new name are required.' };
+/**
+ * Updates an existing tag's name.
+ * @param formData Contains the 'tagId' and the 'name' for the update.
+ * @returns An object with a 'success' or 'error' message.
+ */
+export async function updateTagAction(formData: FormData) {
+  const id = formData.get('tagId') as string;
+  const newName = formData.get('name') as string;
+
+  if (!id || !newName) {
+    return { error: 'Missing required fields.' };
   }
 
   try {
-    // Check if a tag with the new name already exists to prevent duplicates
-    const existingTag = await prisma.tag.findUnique({
+    const existingTagWithNewName = await prisma.tag.findUnique({
       where: { name: newName },
     });
 
-    if (existingTag && existingTag.id !== tagId) {
+    if (existingTagWithNewName && existingTagWithNewName.id !== id) {
       return { error: `A tag named "${newName}" already exists.` };
     }
 
     const updatedTag = await prisma.tag.update({
-      where: { id: tagId },
+      where: { id },
       data: { name: newName },
     });
 
-    revalidatePath('/tags');
-    return { success: `Tag renamed to "${updatedTag.name}" successfully.` };
+    revalidatePath('/dashboard/tags');
+    return { success: `Tag renamed to "${updatedTag.name}".` };
   } catch (error) {
-    console.error('Error updating tag:', error);
     return { error: 'Failed to update tag.' };
+  }
+}
+
+/**
+ * Deletes a tag from the database.
+ * @param formData Contains the 'tagId' of the tag to delete.
+ * @returns An object with a 'success' or 'error' message.
+ */
+export async function deleteTagAction(formData: FormData) {
+  const id = formData.get('tagId') as string;
+
+  if (!id) {
+    return { error: 'Tag ID is required.' };
+  }
+
+  try {
+    const tag = await prisma.tag.findUnique({ where: { id } });
+    if (!tag) {
+      return { error: 'Tag not found.' };
+    }
+
+    await prisma.tag.delete({ where: { id } });
+
+    revalidatePath('/dashboard/tags');
+    return { success: `Tag "${tag.name}" has been deleted.` };
+  } catch (error) {
+    return { error: 'Failed to delete tag.' };
   }
 }
