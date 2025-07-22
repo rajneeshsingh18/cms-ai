@@ -38,7 +38,7 @@ export async function uploadImageAction(formData: FormData) {
 }
 
 // Action to create the post in the database
-export async function createPost(prevState: any, formData: FormData) {
+export async function createPostAction(prevState: any, formData: FormData) {
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const published = formData.get('published') === 'on';

@@ -12,12 +12,23 @@ import Image from 'next/image';
 import { type Post, type Tag } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { updatePostAction, deletePostAction, uploadImageAction, generateMetaDescriptionAction, suggestTagsAction } from './actions';
-import AffiliateHelper from '@/components/AffiliateHelper'; // Import the AffiliateHelper
-import { type Editor } from '@tiptap/react'; // Import the Editor type
+import AffiliateHelper from '@/components/AffiliateHelper';
+import { type Editor } from '@tiptap/react';
 
 type PostWithTags = Post & {
   tags: Tag[];
 };
+
+
+import { ButtonHTMLAttributes, ReactNode } from 'react';
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+
+const RetroButton = ({ children, ...props }: { children: ReactNode } & ButtonProps) => (
+    <Button {...props} className="bg-amber-100 border-2 border-foreground rounded-md shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-50 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0 text-foreground">
+      {children}
+    </Button>
+);
 
 export default function EditPostForm({ post }: { post: PostWithTags }) {
   const [updateState, updateFormAction] = useActionState(updatePostAction, { message: '' });
@@ -30,7 +41,7 @@ export default function EditPostForm({ post }: { post: PostWithTags }) {
   const [published, setPublished] = useState(post.published);
   const [metaDescription, setMetaDescription] = useState(post.metaDescription || '');
   const [saveStatus, setSaveStatus] = useState('All changes saved');
-  const [editorInstance, setEditorInstance] = useState<Editor | null>(null); // State for the editor instance
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
 
   const TiptapEditor = useMemo(() =>
     dynamic(() => import('@/components/TiptapEditor'), { ssr: false, loading: () => <p>Loading editor...</p> }),
@@ -78,12 +89,8 @@ export default function EditPostForm({ post }: { post: PostWithTags }) {
 
   const handleDelete = async () => {
     toast.info('Deleting post...');
-    try {
-      await deletePostAction(post.id);
-      toast.success('Post deleted successfully!');
-    } catch (error) {
-      toast.error('Failed to delete post.');
-    }
+    await deletePostAction(post.id);
+    toast.success('Post deleted successfully!');
   };
 
   const handlePreview = () => {
@@ -119,46 +126,62 @@ export default function EditPostForm({ post }: { post: PostWithTags }) {
   return (
     <form action={updateFormAction} className="space-y-6">
       <input type="hidden" name="postId" value={post.id} />
+      
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Edit Post</h1>
+        <h1 className="text-3xl md:text-4xl font-bold font-serif tracking-wide">Edit Post</h1>
         <div className="flex items-center gap-4">
-          <p className="text-sm text-muted-foreground">{saveStatus}</p>
-          <Button type="button" variant="outline" onClick={handlePreview}>Preview</Button>
+          <p className="text-sm font-mono text-foreground/80">{saveStatus}</p>
+          <RetroButton type="button" onClick={handlePreview}>Preview</RetroButton>
           <AlertDialog>
-            <AlertDialogTrigger asChild><Button type="button" variant="destructive">Delete</Button></AlertDialogTrigger>
-            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this post.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><div><AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction></div></AlertDialogFooter></AlertDialogContent>
+            <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" className="rounded-md border-2 border-red-800 shadow-[2px_2px_0px_0px_rgba(127,29,29,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">Delete</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-amber-50 border-2 border-foreground">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="font-serif">Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription className="font-mono">This will permanently delete this post.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel asChild><RetroButton>Cancel</RetroButton></AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white rounded-md">Continue</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
           </AlertDialog>
-          <Button type="submit" name="intent" value="save-and-close">Save & Close</Button>
+          <Button type="submit" name="intent" value="save-and-close" className="bg-foreground text-amber-50 rounded-md shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all">Save & Close</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader><CardTitle>Post Details</CardTitle></CardHeader>
+          <Card className="bg-white border-2 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg">
+            <CardHeader><CardTitle className="font-serif tracking-wide">Post Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <div className="space-y-1">
+                <Label htmlFor="title" className="font-mono font-semibold">Title</Label>
+                <Input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} required className="font-mono" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="image">Featured Image</Label>
-                <Input id="image" name="image" type="file" accept="image/*" onChange={handleImageUpload} />
-                {imageUrl && <div className="mt-4 relative w-full h-64"><Image src={imageUrl} alt="Image preview" fill className="object-cover rounded-md" /></div>}
+              <div className="space-y-1">
+                <Label htmlFor="image" className="font-mono font-semibold">Featured Image</Label>
+                <Input id="image" name="image" type="file" accept="image/*" onChange={handleImageUpload} className="font-mono" />
+                {imageUrl && <div className="mt-2 relative w-full h-64"><Image src={imageUrl} alt="Image preview" fill className="object-cover rounded-md border-2 border-foreground" /></div>}
                 <input type="hidden" name="imageUrl" value={imageUrl} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="metaDescription">SEO Meta Description</Label>
-                <Textarea id="metaDescription" name="metaDescription" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="A concise summary for search engines (max 155 characters)." rows={3} />
-                <Button type="button" variant="outline" size="sm" onClick={handleGenerateDescription}>Generate with AI</Button>
+              <div className="space-y-1">
+                <Label htmlFor="metaDescription" className="font-mono font-semibold">SEO Meta Description</Label>
+                <div className="flex gap-2">
+                    <Textarea id="metaDescription" name="metaDescription" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="A concise summary for search engines..." rows={3} className="font-mono flex-grow" />
+                    <RetroButton type="button" onClick={handleGenerateDescription}>AI</RetroButton>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags (comma-separated)</Label>
-                <Input id="tags" name="tags" value={tags} onChange={(e) => setTags(e.target.value)} />
-                <Button type="button" variant="outline" size="sm" onClick={handleSuggestTags}>Suggest with AI</Button>
+              <div className="space-y-1">
+                <Label htmlFor="tags" className="font-mono font-semibold">Tags</Label>
+                <div className="flex gap-2">
+                    <Input id="tags" name="tags" value={tags} onChange={(e) => setTags(e.target.value)} className="font-mono flex-grow" />
+                    <RetroButton type="button" onClick={handleSuggestTags}>AI</RetroButton>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Content</Label>
+              <div className="space-y-1">
+                <Label className="font-mono font-semibold">Content</Label>
                 <TiptapEditor
                   name="content"
                   defaultValue={post.content}
@@ -166,15 +189,19 @@ export default function EditPostForm({ post }: { post: PostWithTags }) {
                   onEditorInstance={setEditorInstance}
                 />
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 pt-2">
                 <input type="checkbox" id="published" name="published" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4"/>
-                <Label htmlFor="published">Published</Label>
+                <Label htmlFor="published" className="font-mono">Publish Immediately</Label>
               </div>
             </CardContent>
           </Card>
         </div>
         <div className="lg:col-span-1">
-          <AffiliateHelper editor={editorInstance} />
+            {/* The AffiliateHelper will now also be implicitly styled by the layout's background. 
+                If it's a Card, we can style it too. Assuming it's a Card-based component. */}
+            <div className="bg-white border-2 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg">
+                <AffiliateHelper editor={editorInstance} />
+            </div>
         </div>
       </div>
     </form>
